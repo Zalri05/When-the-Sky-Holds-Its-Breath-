@@ -1,0 +1,452 @@
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chasing the Sunset 🌅</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 15px;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: linear-gradient(#ffd1a9, #f7a6a9, #b58bc2);
+    color: #603c60;
+    overflow-x: hidden;
+}
+
+h1 {
+    margin-bottom: 5px;
+}
+
+#game-container {
+    position: relative;
+    width: 95%;
+    max-width: 420px;
+    height: 420px;
+    margin: 15px auto;
+    overflow: hidden;
+    border: 3px solid white;
+    border-radius: 15px;
+    background: linear-gradient(
+        to bottom,
+        #f9b5b5 0%,
+        #ffb36b 45%,
+        #f47d75 65%,
+        #735c91 100%
+    );
+    touch-action: none;
+}
+
+#sun {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    background: #fff0a8;
+    border-radius: 50%;
+    left: 50%;
+    top: 38%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 45px #fff0a8;
+}
+
+#water {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 27%;
+    background: linear-gradient(#e88b91, #625d91);
+    border-top: 3px solid rgba(255,255,255,.5);
+}
+
+#water::before {
+    content: "";
+    position: absolute;
+    top: 15px;
+    left: 15%;
+    width: 70%;
+    height: 3px;
+    background: rgba(255,255,255,.6);
+    box-shadow:
+        0 25px 0 rgba(255,255,255,.4),
+        0 50px 0 rgba(255,255,255,.3);
+}
+
+#score-container {
+    position: absolute;
+    z-index: 10;
+    top: 10px;
+    left: 10px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,.8);
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+#player {
+    position: absolute;
+    bottom: 75px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 38px;
+    z-index: 5;
+}
+
+.item {
+    position: absolute;
+    font-size: 27px;
+    z-index: 4;
+    user-select: none;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 35px;
+    margin: 20px auto;
+}
+
+.control-btn {
+    width: 85px;
+    height: 85px;
+    border: none;
+    border-radius: 50%;
+    background: #e87979;
+    color: white;
+    font-size: 38px;
+    font-weight: bold;
+    touch-action: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.control-btn:active {
+    transform: scale(.9);
+}
+
+#game-over, #win-screen {
+    display: none;
+    max-width: 420px;
+    margin: 25px auto;
+    padding: 25px 15px;
+    background: rgba(255,255,255,.85);
+    border-radius: 15px;
+}
+
+#win-screen {
+    background: linear-gradient(#ffe0c2, #f7b2c4, #d0a5d8);
+}
+
+#win-screen h1 {
+    color: #a64f6c;
+}
+
+#win-screen p {
+    line-height: 1.7;
+}
+
+#win-screen .message {
+    font-size: 18px;
+    font-style: italic;
+}
+
+.restart-btn {
+    background: #d87583;
+    color: white;
+    border: none;
+    padding: 13px 25px;
+    border-radius: 25px;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+#game-page p {
+    font-size: 14px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="game-page">
+
+    <h1>Chasing the Sunset 🌅</h1>
+    <p>Collect the fireflies and enjoy the sunset!</p>
+    <p>Move using the buttons or Arrow Keys / A-D.</p>
+
+    <div id="game-container">
+
+        <div id="score-container">
+            ✨ <span id="score">0</span>/10
+            &nbsp; | &nbsp;
+            ❤️ <span id="lives">3</span>
+        </div>
+
+        <div id="sun"></div>
+        <div id="water"></div>
+        <div id="player">🌟</div>
+
+    </div>
+
+    <div class="controls">
+        <button class="control-btn" id="left-btn">←</button>
+        <button class="control-btn" id="right-btn">→</button>
+    </div>
+
+</div>
+
+<div id="game-over">
+    <h1>Oh no! 🌥️</h1>
+    <p>The sunset is still waiting for you.</p>
+    <p>You collected <span id="final-score">0</span> fireflies.</p>
+    <button class="restart-btn" onclick="restartGame()">Try Again</button>
+</div>
+
+<div id="win-screen">
+    <h1>You Caught the Sunset! 🌅</h1>
+    <div style="font-size:55px;">🌇✨🌸</div>
+
+    <p>You collected all 10 fireflies!</p>
+
+    <p class="message">
+        "Some moments are too beautiful to last forever,
+        but that doesn't make them any less special."
+    </p>
+
+    <p>
+        I hope you always find something beautiful
+        in every ending, and something worth looking forward
+        to in every new beginning. ❤️
+    </p>
+
+    <button class="restart-btn" onclick="restartGame()">
+        Watch the Sunset Again
+    </button>
+</div>
+
+<script>
+
+const container = document.getElementById("game-container");
+const player = document.getElementById("player");
+
+const scoreDisplay = document.getElementById("score");
+const livesDisplay = document.getElementById("lives");
+
+const gamePage = document.getElementById("game-page");
+const gameOver = document.getElementById("game-over");
+const winScreen = document.getElementById("win-screen");
+
+let score = 0;
+let lives = 3;
+let playerPosition = 50;
+let items = [];
+let gameRunning = false;
+let spawnTimer;
+let animationFrame;
+let lastSpawn = 0;
+let lastTime = 0;
+let movingDirection = null;
+let movementInterval = null;
+
+const leftBtn = document.getElementById("left-btn");
+const rightBtn = document.getElementById("right-btn");
+
+function movePlayer(direction) {
+    const step = 2;
+
+    if (direction === "left") {
+        playerPosition = Math.max(7, playerPosition - step);
+    } else {
+        playerPosition = Math.min(93, playerPosition + step);
+    }
+
+    player.style.left = playerPosition + "%";
+}
+
+// Hold-to-move controls
+function startMoving(direction) {
+    stopMoving();
+    movingDirection = direction;
+
+    movePlayer(direction);
+
+    movementInterval = setInterval(() => {
+        movePlayer(movingDirection);
+    }, 16);
+}
+
+function stopMoving() {
+    movingDirection = null;
+    clearInterval(movementInterval);
+    movementInterval = null;
+}
+
+[leftBtn, rightBtn].forEach((btn, index) => {
+    btn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        startMoving(index === 0 ? "left" : "right");
+    });
+});
+
+document.addEventListener("pointerup", stopMoving);
+document.addEventListener("pointercancel", stopMoving);
+
+document.addEventListener("keydown", (e) => {
+    const key = e.key.toLowerCase();
+
+    if (key === "arrowleft" || key === "a") {
+        movePlayer("left");
+    }
+
+    if (key === "arrowright" || key === "d") {
+        movePlayer("right");
+    }
+});
+
+function createItem() {
+    if (!gameRunning) return;
+
+    const item = document.createElement("div");
+    item.classList.add("item");
+
+    const isCloud = Math.random() < 0.25;
+
+    item.textContent = isCloud ? "🌥️" : "✨";
+    item.dataset.type = isCloud ? "cloud" : "firefly";
+
+    const position = Math.random() * 85 + 5;
+
+    item.style.left = position + "%";
+    item.style.top = "-35px";
+
+    container.appendChild(item);
+
+    items.push({
+        element: item,
+        x: position,
+        y: -35,
+        speed: isCloud ? 1.7 : 2.2,
+        type: isCloud ? "cloud" : "firefly"
+    });
+}
+
+function updateGame(timestamp) {
+    if (!gameRunning) return;
+
+    if (!lastTime) lastTime = timestamp;
+
+    const delta = Math.min((timestamp - lastTime) / 16.67, 3);
+    lastTime = timestamp;
+
+    if (timestamp - lastSpawn > 700) {
+        createItem();
+        lastSpawn = timestamp;
+    }
+
+    const playerY = container.clientHeight - 115;
+
+    items.forEach((item) => {
+        item.y += item.speed * delta;
+        item.element.style.top = item.y + "px";
+
+        const horizontalDistance =
+            Math.abs(item.x - playerPosition);
+
+        const verticalDistance =
+            Math.abs(item.y - playerY);
+
+        if (horizontalDistance < 9 && verticalDistance < 30) {
+
+            if (item.type === "firefly") {
+                score++;
+                scoreDisplay.textContent = score;
+            } else {
+                lives--;
+                livesDisplay.textContent = lives;
+            }
+
+            item.element.remove();
+            item.collected = true;
+
+            if (score >= 10) {
+                endGame(true);
+            }
+
+            if (lives <= 0) {
+                endGame(false);
+            }
+        }
+    });
+
+    items = items.filter((item) => {
+        if (item.collected || item.y > container.clientHeight) {
+            item.element.remove();
+            return false;
+        }
+
+        return true;
+    });
+
+    animationFrame = requestAnimationFrame(updateGame);
+}
+
+function endGame(won) {
+    if (!gameRunning) return;
+
+    gameRunning = false;
+    stopMoving();
+    cancelAnimationFrame(animationFrame);
+
+    items.forEach(item => item.element.remove());
+    items = [];
+
+    gamePage.style.display = "none";
+
+    if (won) {
+        winScreen.style.display = "block";
+    } else {
+        document.getElementById("final-score").textContent = score;
+        gameOver.style.display = "block";
+    }
+}
+
+function restartGame() {
+    cancelAnimationFrame(animationFrame);
+    stopMoving();
+
+    score = 0;
+    lives = 3;
+    playerPosition = 50;
+    items = [];
+
+    scoreDisplay.textContent = "0";
+    livesDisplay.textContent = "3";
+
+    player.style.left = "50%";
+
+    gameOver.style.display = "none";
+    winScreen.style.display = "none";
+    gamePage.style.display = "block";
+
+    container.querySelectorAll(".item").forEach(el => el.remove());
+
+    lastSpawn = 0;
+    lastTime = 0;
+    gameRunning = true;
+
+    animationFrame = requestAnimationFrame(updateGame);
+}
+
+restartGame();
+
+</script>
+
+</body>
+</html>
